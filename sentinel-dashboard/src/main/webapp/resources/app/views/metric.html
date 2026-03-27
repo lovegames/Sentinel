@@ -15,6 +15,30 @@
             <i class="fa fa-sort-amount-desc" aria-hidden="true" ng-show="isDescOrder"></i>
             {{metricTypeDesc}}&nbsp;实时监控
           </span>
+
+          <!-- 快捷时间选择 -->
+          <span style="margin-left: 15px; font-size: 12px;">
+            <button class="btn btn-sm" ng-class="timeRangeType == '5m' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('5m')">5分钟</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '30m' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('30m')">30分钟</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '1h' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('1h')">1小时</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '6h' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('6h')">6小时</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '12h' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('12h')">12小时</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '1d' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('1d')">1天</button>
+            <button class="btn btn-sm" ng-class="timeRangeType == '2d' ? 'btn-primary' : 'btn-default'" ng-click="setTimeRange('2d')">2天</button>
+          </span>
+
+          <!-- 自定义时间选择器 -->
+          <span style="margin-left: 10px; font-size: 12px;">
+            <input type="datetime-local" ng-model="startTime" ng-change="onStartTimeChange()"
+              style="height: 28px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+            <span> 至 </span>
+            <input type="datetime-local" ng-model="endTime" ng-change="onEndTimeChange()"
+              style="height: 28px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+            <button class="btn btn-primary btn-sm" ng-click="reInitIdentityDatas()" style="margin-left: 5px;">
+              <i class="fa fa-search"></i> 查询
+            </button>
+          </span>
+
           <button class="btn btn-outline-primary" style="float: right;margin-right: 10px;height: 30px;font-size: 12px;" ng-click="setDescOrder()"
             ng-if="!isDescOrder">降序</button>
           <button class="btn btn-outline-primary" style="float: right;margin-right: 10px;height: 30px;font-size: 12px;" ng-click="setAscOrder()"

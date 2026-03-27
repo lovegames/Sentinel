@@ -6,18 +6,63 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     $scope.endTime = new Date();
     $scope.startTime = new Date();
     $scope.startTime.setMinutes($scope.endTime.getMinutes() - 30);
-    $scope.startTimeFmt = formatDate($scope.startTime);
-    $scope.endTimeFmt = formatDate($scope.endTime);
+    $scope.timeRangeType = '30m';  // 当前选中的时间范围类型
+
+    // 格式化日期为 datetime-local 输入框格式 (YYYY-MM-DDTHH:mm:ss)
+    function formatDateTimeLocal(date) {
+      var d = new Date(date);
+      var year = d.getFullYear();
+      var month = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      var hours = ('0' + d.getHours()).slice(-2);
+      var minutes = ('0' + d.getMinutes()).slice(-2);
+      var seconds = ('0' + d.getSeconds()).slice(-2);
+      return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds;
+    }
+
     function formatDate(date) {
       return moment(date).format('YYYY/MM/DD HH:mm:ss');
     }
-    $scope.changeStartTime = function (startTime) {
-      $scope.startTime = new Date(startTime);
-      $scope.startTimeFmt = formatDate(startTime);
+
+    // 快捷时间范围选择
+    $scope.setTimeRange = function(type) {
+      $scope.timeRangeType = type;
+      $scope.endTime = new Date();
+      $scope.startTime = new Date();
+
+      switch(type) {
+        case '5m':
+          $scope.startTime.setMinutes($scope.endTime.getMinutes() - 5);
+          break;
+        case '30m':
+          $scope.startTime.setMinutes($scope.endTime.getMinutes() - 30);
+          break;
+        case '1h':
+          $scope.startTime.setHours($scope.endTime.getHours() - 1);
+          break;
+        case '6h':
+          $scope.startTime.setHours($scope.endTime.getHours() - 6);
+          break;
+        case '12h':
+          $scope.startTime.setHours($scope.endTime.getHours() - 12);
+          break;
+        case '1d':
+          $scope.startTime.setDate($scope.endTime.getDate() - 1);
+          break;
+        case '2d':
+          $scope.startTime.setDate($scope.endTime.getDate() - 2);
+          break;
+      }
+
+      $scope.reInitIdentityDatas();
     };
-    $scope.changeEndTime = function (endTime) {
-      $scope.endTime = new Date(endTime);
-      $scope.endTimeFmt = formatDate(endTime);
+
+    // 自定义时间变化时清除快捷选择状态
+    $scope.onStartTimeChange = function() {
+      $scope.timeRangeType = 'custom';
+    };
+    $scope.onEndTimeChange = function() {
+      $scope.timeRangeType = 'custom';
     };
 
     $scope.app = $stateParams.app;
@@ -34,26 +79,26 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
 
     $scope.pageChanged = function (newPageNumber) {
       $scope.servicePageConfig.currentPageIndex = newPageNumber;
-      reInitIdentityDatas();
+      $scope.reInitIdentityDatas();
     };
 
     var searchT;
     $scope.searchService = function () {
       $timeout.cancel(searchT);
       searchT = $timeout(function () {
-        reInitIdentityDatas();
+        $scope.reInitIdentityDatas();
       }, 600);
     }
 
     var intervalId;
-    reInitIdentityDatas();
-    function reInitIdentityDatas() {
+    $scope.reInitIdentityDatas = function() {
       $interval.cancel(intervalId);
       queryIdentityDatas();
       intervalId = $interval(function () {
         queryIdentityDatas();
       }, DATA_REFRESH_INTERVAL);
     };
+    $scope.reInitIdentityDatas();
 
     $scope.$on('$destroy', function () {
       $interval.cancel(intervalId);
@@ -177,13 +222,45 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     $scope.metrics = [];
     $scope.emptyObjs = [];
     function queryIdentityDatas() {
+      // 如果选择了快捷时间类型（非custom），自动更新时间范围
+      if ($scope.timeRangeType !== 'custom') {
+        $scope.endTime = new Date();
+        $scope.startTime = new Date();
+        switch($scope.timeRangeType) {
+          case '5m':
+            $scope.startTime.setMinutes($scope.endTime.getMinutes() - 5);
+            break;
+          case '30m':
+            $scope.startTime.setMinutes($scope.endTime.getMinutes() - 30);
+            break;
+          case '1h':
+            $scope.startTime.setHours($scope.endTime.getHours() - 1);
+            break;
+          case '6h':
+            $scope.startTime.setHours($scope.endTime.getHours() - 6);
+            break;
+          case '12h':
+            $scope.startTime.setHours($scope.endTime.getHours() - 12);
+            break;
+          case '1d':
+            $scope.startTime.setDate($scope.endTime.getDate() - 1);
+            break;
+          case '2d':
+            $scope.startTime.setDate($scope.endTime.getDate() - 2);
+            break;
+        }
+      }
+
       var params = {
         app: $scope.app,
         pageIndex: $scope.servicePageConfig.currentPageIndex,
         pageSize: $scope.servicePageConfig.pageSize,
         desc: $scope.isDescOrder,
-        searchKey: $scope.serviceQuery
+        searchKey: $scope.serviceQuery,
+        startTime: $scope.startTime.getTime(),
+        endTime: $scope.endTime.getTime()
       };
+      console.log('queryIdentityDatas - timeRangeType:', $scope.timeRangeType, 'startTime:', new Date(params.startTime), 'endTime:', new Date(params.endTime));
       MetricService.queryAppSortedIdentities(params).success(function (data) {
         $scope.metrics = [];
         $scope.emptyObjs = [];
@@ -260,10 +337,10 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     $scope.isDescOrder = true;
     $scope.setDescOrder = function () {
       $scope.isDescOrder = true;
-      reInitIdentityDatas();
+      $scope.reInitIdentityDatas();
     }
     $scope.setAscOrder = function () {
       $scope.isDescOrder = false;
-      reInitIdentityDatas();
+      $scope.reInitIdentityDatas();
     }
   }]);

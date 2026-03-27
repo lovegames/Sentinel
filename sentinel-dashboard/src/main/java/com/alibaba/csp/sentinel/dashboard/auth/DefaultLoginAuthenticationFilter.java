@@ -82,6 +82,12 @@ public class DefaultLoginAuthenticationFilter implements LoginAuthenticationFilt
 
         String servletPath = httpRequest.getServletPath();
 
+        // Exclude H2 Console paths directly
+        if (servletPath.startsWith("/h2-console")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Exclude the urls which needn't auth
         boolean authFilterExcludeMatch = authFilterExcludeUrls.stream()
                 .anyMatch(authFilterExcludeUrl -> PATH_MATCHER.match(authFilterExcludeUrl, servletPath));

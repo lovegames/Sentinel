@@ -29,6 +29,7 @@ import com.alibaba.csp.sentinel.dashboard.repository.metric.MetricsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,7 +49,8 @@ public class MetricController {
 
     private static Logger logger = LoggerFactory.getLogger(MetricController.class);
 
-    private static final long maxQueryIntervalMs = 1000 * 60 * 60;
+    @Value("${sentinel.dashboard.metric.max-query-interval-hours:24}")
+    private int maxQueryIntervalHours;
 
     @Autowired
     private MetricsRepository<MetricEntity> metricStore;
@@ -81,8 +83,8 @@ public class MetricController {
         if (startTime == null) {
             startTime = endTime - 1000 * 60 * 5;
         }
-        if (endTime - startTime > maxQueryIntervalMs) {
-            return Result.ofFail(-1, "time intervalMs is too big, must <= 1h");
+        if (endTime - startTime > maxQueryIntervalHours * 60 * 60 * 1000L) {
+            return Result.ofFail(-1, "time intervalMs is too big, must <= " + maxQueryIntervalHours + "h");
         }
         List<String> resources = metricStore.listResourcesOfApp(app);
         logger.debug("queryTopResourceMetric(), resources.size()={}", resources.size());
@@ -150,8 +152,8 @@ public class MetricController {
         if (startTime == null) {
             startTime = endTime - 1000 * 60;
         }
-        if (endTime - startTime > maxQueryIntervalMs) {
-            return Result.ofFail(-1, "time intervalMs is too big, must <= 1h");
+        if (endTime - startTime > maxQueryIntervalHours * 60 * 60 * 1000L) {
+            return Result.ofFail(-1, "time intervalMs is too big, must <= " + maxQueryIntervalHours + "h");
         }
         List<MetricEntity> entities = metricStore.queryByAppAndResourceBetween(
             app, identity, startTime, endTime);
