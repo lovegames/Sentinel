@@ -253,19 +253,21 @@ public class H2MetricsRepository implements MetricsRepository<MetricEntity> {
         }
 
         long now = System.currentTimeMillis();
-        // Use the full retention period for listing resources
-        long secondRetentionMs = properties.getSecondRetentionMs();
-        long minuteRetentionMs = properties.getRetentionMs();
+        // Query last 5 minutes for resource listing (same as retention in original InMemoryRepository)
+        long fiveMinutesAgo = now - 5 * 60 * 1000;
 
-        // Merge resources from both tables - query within retention period
-        String sql = "SELECT DISTINCT resource FROM (" +
-                "SELECT resource FROM metric_second WHERE app = ? AND timestamp >= ? " +
-                "UNION " +
-                "SELECT resource FROM metric_minute WHERE app = ? AND minute_timestamp >= ?" +
-                ") ORDER BY resource";
+        // Query resources from last 5 minutes, order by blockQps DESC, passQps DESC
+        String sql = "SELECT resource FROM (" +
+                "SELECT resource, SUM(block_qps) as total_block_qps, SUM(pass_qps) as total_pass_qps FROM (" +
+                "SELECT resource, block_qps, pass_qps FROM metric_second WHERE app = ? AND timestamp >= ? " +
+                "UNION ALL " +
+                "SELECT resource, block_qps, pass_qps FROM metric_minute WHERE app = ? AND minute_timestamp >= ?" +
+                ") combined GROUP BY resource" +
+                ") ORDER BY total_block_qps DESC, total_pass_qps DESC";
 
         try {
-            return jdbcTemplate.queryForList(sql, String.class, app, now - secondRetentionMs, app, now - minuteRetentionMs);
+            List<String> resources = jdbcTemplate.queryForList(sql, String.class, app, fiveMinutesAgo, app, fiveMinutesAgo);
+            return resources != null ? resources : new ArrayList<>();
         } catch (EmptyResultDataAccessException e) {
             return new ArrayList<>();
         }

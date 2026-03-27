@@ -5,8 +5,9 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
 	$scope.charts = [];
     $scope.endTime = new Date();
     $scope.startTime = new Date();
-    $scope.startTime.setMinutes($scope.endTime.getMinutes() - 30);
-    $scope.timeRangeType = '30m';  // 当前选中的时间范围类型
+    $scope.startTime.setMinutes($scope.endTime.getMinutes() - 5);
+    $scope.timeRangeType = '5m';  // 当前选中的时间范围类型，默认5分钟
+    $scope.isAutoRefresh = true;   // 是否自动刷新模式
 
     // 格式化日期为 datetime-local 输入框格式 (YYYY-MM-DDTHH:mm:ss)
     function formatDateTimeLocal(date) {
@@ -27,6 +28,7 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     // 快捷时间范围选择
     $scope.setTimeRange = function(type) {
       $scope.timeRangeType = type;
+      $scope.isAutoRefresh = true;  // 选择快捷时间，恢复自动刷新
       $scope.endTime = new Date();
       $scope.startTime = new Date();
 
@@ -60,9 +62,11 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     // 自定义时间变化时清除快捷选择状态
     $scope.onStartTimeChange = function() {
       $scope.timeRangeType = 'custom';
+      $scope.isAutoRefresh = false;  // 用户手动修改，停止自动刷新的时间更新
     };
     $scope.onEndTimeChange = function() {
       $scope.timeRangeType = 'custom';
+      $scope.isAutoRefresh = false;  // 用户手动修改，停止自动刷新的时间更新
     };
 
     $scope.app = $stateParams.app;
@@ -111,6 +115,10 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
       }
       $.each($scope.metrics, function (idx, metric) {
         if (idx == $scope.metrics.length - 1) {
+          return;
+        }
+        // Skip chart rendering if no data
+        if (!metric.data || metric.data.length === 0) {
           return;
         }
         const chart = new G2.Chart({
@@ -222,8 +230,8 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
     $scope.metrics = [];
     $scope.emptyObjs = [];
     function queryIdentityDatas() {
-      // 如果选择了快捷时间类型（非custom），自动更新时间范围
-      if ($scope.timeRangeType !== 'custom') {
+      // 如果是自动刷新模式，更新时间范围
+      if ($scope.isAutoRefresh && $scope.timeRangeType !== 'custom') {
         $scope.endTime = new Date();
         $scope.startTime = new Date();
         switch($scope.timeRangeType) {
@@ -260,7 +268,7 @@ app.controller('MetricCtl', ['$scope', '$stateParams', 'MetricService', '$interv
         startTime: $scope.startTime.getTime(),
         endTime: $scope.endTime.getTime()
       };
-      console.log('queryIdentityDatas - timeRangeType:', $scope.timeRangeType, 'startTime:', new Date(params.startTime), 'endTime:', new Date(params.endTime));
+      console.log('queryIdentityDatas - isAutoRefresh:', $scope.isAutoRefresh, 'timeRangeType:', $scope.timeRangeType, 'startTime:', new Date(params.startTime), 'endTime:', new Date(params.endTime));
       MetricService.queryAppSortedIdentities(params).success(function (data) {
         $scope.metrics = [];
         $scope.emptyObjs = [];
