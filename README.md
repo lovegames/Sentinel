@@ -9,6 +9,22 @@
 [![Gitter](https://badges.gitter.im/alibaba/Sentinel.svg)](https://gitter.im/alibaba/Sentinel)
 [![Leaderboard](https://img.shields.io/badge/Sentinel-Check%20Your%20Contribution-orange)](https://opensource.alibaba.com/contribution_leaderboard/details?projectValue=sentinel)
 
+## fork适配
+1. 监控数据支持存储到H2数据库文件
+```yaml
+## 配置保存时间,建议2天
+sentinel.dashboard.metric.max-query-interval-hours=72
+
+## db文件保存位置
+sentinel.dashboard.metric.storage.data-path=${user.home}/logs/csp/sentinel-metrics
+
+```
+
+2. 前端页面优化
+
+- 时间选择支持快速选择,默认5分钟
+
+
 ## Introduction
 
 As distributed systems become increasingly popular, the reliability between services is becoming more important than ever before.
