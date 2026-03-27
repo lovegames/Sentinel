@@ -59,7 +59,7 @@ public class TransportSpringMvcDemoApplication {
         FlowRule rule = new FlowRule();
         rule.setResource("demo-hello-api");
         rule.setGrade(RuleConstant.FLOW_GRADE_QPS);
-        rule.setCount(1);
+        rule.setCount(10);
         rules.add(rule);
         FlowRuleManager.loadRules(rules);
     }
@@ -68,6 +68,11 @@ public class TransportSpringMvcDemoApplication {
     @ResponseBody
     public String hello() {
         Entry entry = null;
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         try {
             entry = SphU.entry("demo-hello-api");
             return "ok: " + LocalDateTime.now();
